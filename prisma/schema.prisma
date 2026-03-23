@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -57,8 +57,8 @@ model Problem {
   title         String
   slug          String   @unique
   difficulty    String   // EASY, MEDIUM, HARD
-  description   String   @db.Text
-  referenceData String   @db.Text // JSON: requirements, entities, api, architecture, deepDives, rubric
+  description   String
+  referenceData String // JSON: requirements, entities, api, architecture, deepDives, rubric
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -66,13 +66,15 @@ model Problem {
 }
 
 model Session {
-  id          String    @id @default(cuid())
-  userId      String
-  problemId   String
-  currentStep String    @default("REQUIREMENTS") // REQUIREMENTS, CORE_ENTITIES, API_DESIGN, HIGH_LEVEL_DESIGN, DEEP_DIVES, COMPLETED
+  id           String    @id @default(cuid())
+  userId       String
+  problemId    String
+  currentStep  String    @default("REQUIREMENTS") // REQUIREMENTS, CORE_ENTITIES, API_DESIGN, HIGH_LEVEL_DESIGN, DEEP_DIVES, COMPLETED
+  status       String    @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED
+  timerElapsed Int       @default(0) // persisted elapsed seconds for current step timer
   overallScore Float?
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
@@ -83,8 +85,8 @@ model StepAttempt {
   id           String   @id @default(cuid())
   sessionId    String
   step         String   // REQUIREMENTS, CORE_ENTITIES, API_DESIGN, HIGH_LEVEL_DESIGN, DEEP_DIVES
-  userInput    String   @db.Text // JSON: text content or Excalidraw scene data
-  aiEvaluation String?  @db.Text // JSON: { score, feedback: { strengths, weaknesses, suggestions }, passed }
+  userInput    String // JSON: text content or Excalidraw scene data
+  aiEvaluation String? // JSON: { score, feedback: { strengths, weaknesses, suggestions }, passed }
   passed       Boolean  @default(false)
   createdAt    DateTime @default(now())
 
@@ -97,7 +99,7 @@ model KnowledgeEntry {
   id        String   @id @default(cuid())
   sourceUrl String
   title     String
-  content   String   @db.Text // JSON: structured knowledge chunks
+  content   String // JSON: structured knowledge chunks
   tags      String   // comma-separated tags for topic matching
   createdAt DateTime @default(now())
 }
@@ -111,7 +113,7 @@ model StudyResource {
   source       String   // O'Reilly, Blog, GitHub, Paper, Documentation
   topics       String   // comma-separated tags for topic matching
   difficulty   String   // BEGINNER, INTERMEDIATE, ADVANCED
-  description  String   @db.Text
+  description  String
   resourceType String   // ARTICLE, BOOK_CHAPTER, VIDEO, DOCUMENTATION
   createdAt    DateTime @default(now())
 

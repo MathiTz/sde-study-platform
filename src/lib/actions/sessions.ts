@@ -1,16 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Step, getNextStep, parseReferenceData } from "@/lib/types";
+import { Step, COMPLETED_STEP, getNextStep, parseReferenceData, SessionStatus } from "@/lib/types";
 import { getAIProvider, buildEvaluationPrompt, prepareUserInput } from "@/lib/ai";
-
-async function getUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
-  return session.user as { id: string; name?: string | null; email?: string | null; image?: string | null };
-}
+import { safeParseEvaluation } from "@/lib/utils/json";
 
 export async function getProblems() {
   return prisma.problem.findMany({
@@ -26,13 +21,11 @@ export async function getProblems() {
 }
 
 export async function getProblem(slug: string) {
-  return prisma.problem.findUnique({
-    where: { slug },
-  });
+  return prisma.problem.findUnique({ where: { slug } });
 }
 
 export async function startSession(problemId: string) {
-  const user = await getUser();
+  const user = await getAuthUser();
 
   const session = await prisma.session.create({
     data: {
@@ -46,28 +39,24 @@ export async function startSession(problemId: string) {
 }
 
 export async function getSession(sessionId: string) {
-  const user = await getUser();
+  const user = await getAuthUser();
 
   return prisma.session.findFirst({
     where: { id: sessionId, userId: user.id },
     include: {
       problem: true,
-      steps: {
-        orderBy: { createdAt: "asc" },
-      },
+      steps: { orderBy: { createdAt: "asc" } },
     },
   });
 }
 
 export async function getUserSessions() {
-  const user = await getUser();
+  const user = await getAuthUser();
 
   return prisma.session.findMany({
     where: { userId: user.id },
     include: {
-      problem: {
-        select: { title: true, slug: true, difficulty: true },
-      },
+      problem: { select: { title: true, slug: true, difficulty: true } },
     },
     orderBy: { startedAt: "desc" },
   });
@@ -78,7 +67,7 @@ export async function submitStep(
   step: Step,
   userInput: string
 ) {
-  const user = await getUser();
+  const user = await getAuthUser();
 
   const session = await prisma.session.findFirst({
     where: { id: sessionId, userId: user.id },
@@ -88,16 +77,14 @@ export async function submitStep(
   if (!session) throw new Error("Session not found");
   if (session.currentStep !== step) throw new Error("Invalid step");
 
-  // Build evaluation prompt from reference data
   const refData = parseReferenceData(session.problem.referenceData);
   const systemPrompt = await buildEvaluationPrompt(step, session.problem.title, refData);
   const processedInput = prepareUserInput(step, userInput);
 
-  // Call AI provider for evaluation
   const provider = getAIProvider();
   const evaluation = await provider.evaluate(systemPrompt, processedInput);
 
-  const attempt = await prisma.stepAttempt.create({
+  return prisma.stepAttempt.create({
     data: {
       sessionId,
       step,
@@ -106,12 +93,10 @@ export async function submitStep(
       passed: evaluation.passed,
     },
   });
-
-  return attempt;
 }
 
 export async function advanceStep(sessionId: string) {
-  const user = await getUser();
+  const user = await getAuthUser();
 
   const session = await prisma.session.findFirst({
     where: { id: sessionId, userId: user.id },
@@ -121,27 +106,19 @@ export async function advanceStep(sessionId: string) {
 
   const next = getNextStep(session.currentStep as Step);
 
-  if (next === "COMPLETED") {
-    // Calculate overall score from all step attempts
-    const steps = await prisma.stepAttempt.findMany({
-      where: { sessionId },
-    });
+  if (next === COMPLETED_STEP) {
+    const steps = await prisma.stepAttempt.findMany({ where: { sessionId } });
 
-    const scores = steps
-      .map((s) => {
-        const eval_ = JSON.parse(s.aiEvaluation || "{}");
-        return eval_.score || 0;
-      });
-
+    const scores = steps.map((s) => safeParseEvaluation(s.aiEvaluation)?.score ?? 0);
     const overallScore =
-      scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0;
+      scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
     await prisma.session.update({
       where: { id: sessionId },
       data: {
-        currentStep: "COMPLETED",
+        currentStep: COMPLETED_STEP,
+        status: "COMPLETED" satisfies SessionStatus,
+        timerElapsed: 0,
         completedAt: new Date(),
         overallScore,
       },
@@ -149,7 +126,25 @@ export async function advanceStep(sessionId: string) {
   } else {
     await prisma.session.update({
       where: { id: sessionId },
-      data: { currentStep: next },
+      data: { currentStep: next, status: "ACTIVE" satisfies SessionStatus, timerElapsed: 0 },
     });
   }
+}
+
+export async function pauseSession(sessionId: string, elapsedSeconds: number) {
+  const user = await getAuthUser();
+
+  await prisma.session.updateMany({
+    where: { id: sessionId, userId: user.id },
+    data: { status: "PAUSED" satisfies SessionStatus, timerElapsed: elapsedSeconds },
+  });
+}
+
+export async function resumeSession(sessionId: string) {
+  const user = await getAuthUser();
+
+  await prisma.session.updateMany({
+    where: { id: sessionId, userId: user.id },
+    data: { status: "ACTIVE" satisfies SessionStatus },
+  });
 }

@@ -3,7 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
-import { STEP_LABELS, Step, AIEvaluation } from "@/lib/types";
+import { STEP_LABELS, COMPLETED_STEP, PASSING_SCORE_THRESHOLD, Step } from "@/lib/types";
+import { safeParseEvaluation } from "@/lib/utils/json";
 
 export default async function SessionsPage() {
   const authSession = await auth();
@@ -44,7 +45,7 @@ export default async function SessionsPage() {
       ) : (
         <div className="space-y-6">
           {sessions.map((session) => {
-            const isCompleted = session.currentStep === "COMPLETED";
+            const isCompleted = session.currentStep === COMPLETED_STEP;
             return (
               <div
                 key={session.id}
@@ -65,12 +66,17 @@ export default async function SessionsPage() {
                     {isCompleted && session.overallScore != null && (
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          session.overallScore >= 60
+                          session.overallScore >= PASSING_SCORE_THRESHOLD
                             ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                             : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                         }`}
                       >
                         {Math.round(session.overallScore)}%
+                      </span>
+                    )}
+                    {session.status === "PAUSED" && (
+                      <span className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        Paused
                       </span>
                     )}
                     <span className="text-muted-foreground">
@@ -88,14 +94,7 @@ export default async function SessionsPage() {
                 {session.steps.length > 0 && (
                   <div className="divide-y divide-border">
                     {session.steps.map((step) => {
-                      let evaluation: AIEvaluation | null = null;
-                      try {
-                        evaluation = step.aiEvaluation
-                          ? JSON.parse(step.aiEvaluation)
-                          : null;
-                      } catch {
-                        // ignore
-                      }
+                      const evaluation = safeParseEvaluation(step.aiEvaluation);
                       return (
                         <div key={step.id} className="px-4 py-3">
                           <div className="flex items-center justify-between">

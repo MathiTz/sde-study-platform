@@ -1,31 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-
-interface Resource {
-  id: string;
-  title: string;
-  url: string;
-  source: string;
-  topics: string;
-  difficulty: string;
-  description: string;
-  resourceType: string;
-}
-
-const SOURCE_COLORS: Record<string, string> = {
-  "O'Reilly": "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  Blog: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  GitHub: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  Documentation: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  Paper: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-};
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  BEGINNER: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  INTERMEDIATE: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  ADVANCED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-};
+import { ResourceCard, type Resource } from "@/components/ResourceCard";
+import { parseTags } from "@/lib/utils/tags";
 
 const DIFFICULTIES = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
 
@@ -36,9 +13,9 @@ export function ResourceBrowser({
   resources: Resource[];
   topics: string[];
 }) {
-  const [selectedTopic, setSelectedTopic] = useState<string>("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
-  const [selectedSource, setSelectedSource] = useState<string>("");
+  const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("");
+  const [selectedSource, setSelectedSource] = useState("");
   const [search, setSearch] = useState("");
 
   const sources = useMemo(
@@ -51,7 +28,7 @@ export function ResourceBrowser({
       if (selectedDifficulty && r.difficulty !== selectedDifficulty) return false;
       if (selectedSource && r.source !== selectedSource) return false;
       if (selectedTopic) {
-        const tags = r.topics.split(",").map((t) => t.trim().toLowerCase());
+        const tags = parseTags(r.topics);
         if (!tags.some((t) => t.includes(selectedTopic) || selectedTopic.includes(t)))
           return false;
       }
@@ -78,7 +55,7 @@ export function ResourceBrowser({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search resources..."
-            className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="min-w-50 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           />
           <select
             value={selectedTopic}
@@ -130,51 +107,7 @@ export function ResourceBrowser({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((resource) => (
-            <a
-              key={resource.id}
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-lg border border-border p-4 transition-colors hover:border-accent/50 hover:bg-muted/30"
-            >
-              <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${SOURCE_COLORS[resource.source] || "bg-muted text-muted-foreground"}`}
-                >
-                  {resource.source}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${DIFFICULTY_COLORS[resource.difficulty] || "bg-muted text-muted-foreground"}`}
-                >
-                  {resource.difficulty.toLowerCase()}
-                </span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {resource.resourceType.toLowerCase().replace("_", " ")}
-                </span>
-              </div>
-
-              <h3 className="mb-1 font-medium leading-snug group-hover:text-accent">
-                {resource.title}
-              </h3>
-
-              <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">
-                {resource.description}
-              </p>
-
-              <div className="flex flex-wrap gap-1">
-                {resource.topics
-                  .split(",")
-                  .slice(0, 5)
-                  .map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                    >
-                      {tag.trim()}
-                    </span>
-                  ))}
-              </div>
-            </a>
+            <ResourceCard key={resource.id} resource={resource} maxTopicTags={5} />
           ))}
         </div>
       )}

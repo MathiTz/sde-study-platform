@@ -13,6 +13,12 @@ export const PROMPT_SEPARATOR = "\n---\nAnswer:\n";
 /** Max characters for knowledge context injected into evaluation prompt. */
 export const MAX_KNOWLEDGE_CHARS = 600;
 
+/** Max characters of raw page text sent to the AI summariser. */
+export const MAX_SCRAPE_CHARS = 15_000;
+
+/** Max characters for the AI-generated knowledge summary. */
+export const MAX_SUMMARY_CHARS = 2_000;
+
 /** Return a safe fallback evaluation when the AI call or parse fails. */
 export function errorFallback(message?: string): AIEvaluation {
   return {

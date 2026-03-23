@@ -39,7 +39,49 @@ export const STEP_PROMPTS: Record<Step, string> = {
 
 export const RICH_TEXT_STEPS: readonly Step[] = ["CORE_ENTITIES", "API_DESIGN", "DEEP_DIVES"] as const;
 
+export const COMPLETED_STEP = "COMPLETED" as const;
+export type CompletedStep = typeof COMPLETED_STEP;
+
+export const SESSION_STATUSES = ["ACTIVE", "PAUSED", "COMPLETED"] as const;
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
+
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+export const DIFFICULTY_ORDER: Record<Difficulty, number> = { EASY: 0, MEDIUM: 1, HARD: 2 };
+
+export const PASSING_SCORE_THRESHOLD = 60;
+
+export interface AuthUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
+// ─── Requirements ──────────────────────────────────────────────
+
+export interface RequirementsData {
+  functional: string[];
+  nonFunctional: string[];
+  estimation: {
+    dau: string;
+    readWriteRatio: string;
+    avgPayloadKB: string;
+  };
+}
+
+export function serializeRequirements(data: RequirementsData): string {
+  return JSON.stringify(data);
+}
+
+export function deserializeRequirements(raw: string): RequirementsData | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.functional && parsed.nonFunctional) return parsed as RequirementsData;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export interface AIEvaluation {
   score: number;

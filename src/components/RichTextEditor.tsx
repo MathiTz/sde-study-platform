@@ -48,6 +48,14 @@ export function RichTextEditor({
         class: "tiptap-editor prose prose-sm max-w-none focus:outline-none",
         "data-placeholder": placeholder || "",
       },
+      handleKeyDown(view, event) {
+        if (event.key === "Tab") {
+          event.preventDefault();
+          view.dispatch(view.state.tr.insertText("  "));
+          return true;
+        }
+        return false;
+      },
     },
   });
 

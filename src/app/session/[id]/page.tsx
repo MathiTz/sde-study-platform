@@ -66,6 +66,8 @@ export default async function SessionPage({
         <SessionWorkspace
           sessionId={session.id}
           currentStep={session.currentStep}
+          status={session.status}
+          timerElapsed={session.timerElapsed}
           referenceData={session.problem.referenceData}
           existingAttempts={session.steps.map((s) => ({
             step: s.step,

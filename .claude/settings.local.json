@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(ls -la /Users/user/Documents/projects/sde-platform/src/app/session/[id]/)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useMemo, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { submitStep, advanceStep } from "@/lib/actions/sessions";
+import { submitStep, advanceStep, pauseSession, resumeSession } from "@/lib/actions/sessions";
 import {
   Step,
   STEP_LABELS,
@@ -11,17 +11,18 @@ import {
   RICH_TEXT_STEPS,
   AIEvaluation,
   parseReferenceData,
+  RequirementsData,
+  serializeRequirements,
+  deserializeRequirements,
 } from "@/lib/types";
+import { safeParseEvaluation } from "@/lib/utils/json";
+import { buildInitialHLDScene } from "@/lib/utils/excalidraw";
 import { FeedbackPanel } from "@/components/FeedbackPanel";
 import { ExcalidrawBoard } from "@/components/ExcalidrawBoard";
 import { StepTimer } from "@/components/StepTimer";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import {
-  RequirementsEditor,
-  RequirementsData,
-  serializeRequirements,
-  deserializeRequirements,
-} from "@/components/RequirementsEditor";
+import { RequirementsEditor } from "@/components/RequirementsEditor";
+import { StepHints } from "@/components/StepHints";
 
 interface ExistingAttempt {
   step: string;
@@ -33,54 +34,73 @@ interface ExistingAttempt {
 interface SessionWorkspaceProps {
   sessionId: string;
   currentStep: string;
+  status: string;
+  timerElapsed: number;
   referenceData: string;
   existingAttempts: ExistingAttempt[];
 }
 
-
 export function SessionWorkspace({
   sessionId,
   currentStep,
+  status,
+  timerElapsed,
   referenceData,
   existingAttempts,
 }: SessionWorkspaceProps) {
   const step = currentStep as Step;
-  const ref = parseReferenceData(referenceData);
+  const ref = useMemo(() => parseReferenceData(referenceData), [referenceData]);
   const router = useRouter();
 
   const [input, setInput] = useState("");
-  const [requirementsData, setRequirementsData] =
-    useState<RequirementsData | null>(() => {
+  const [requirementsData, setRequirementsData] = useState<RequirementsData | null>(
+    () => {
       const existing = existingAttempts.find((a) => a.step === "REQUIREMENTS");
-      if (existing) return deserializeRequirements(existing.userInput);
-      return null;
-    });
+      return existing ? deserializeRequirements(existing.userInput) : null;
+    }
+  );
   const [excalidrawData, setExcalidrawData] = useState("");
   const [feedback, setFeedback] = useState<AIEvaluation | null>(() => {
     const existing = existingAttempts.find((a) => a.step === step);
-    if (existing?.aiEvaluation) {
-      try {
-        return JSON.parse(existing.aiEvaluation);
-      } catch {
-        return null;
-      }
-    }
-    return null;
+    return safeParseEvaluation(existing?.aiEvaluation);
   });
   const [isPending, startTransition] = useTransition();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [isPaused, setIsPaused] = useState(status === "PAUSED");
+  const elapsedRef = useRef(timerElapsed);
+  const handleElapsedChange = useCallback((s: number) => { elapsedRef.current = s; }, []);
 
   const isDrawingStep = step === "HIGH_LEVEL_DESIGN";
   const isRequirementsStep = step === "REQUIREMENTS";
   const isRichTextStep = RICH_TEXT_STEPS.includes(step);
 
+  const existingContent = useMemo(
+    () => existingAttempts.find((a) => a.step === step)?.userInput,
+    [existingAttempts, step]
+  );
+
+  const initialHLDData = useMemo(() => {
+    if (existingContent) {
+      try {
+        return JSON.parse(existingContent).diagram as string;
+      } catch {
+        return undefined;
+      }
+    }
+    const coreAttempt = existingAttempts.find((a) => a.step === "CORE_ENTITIES");
+    const apiAttempt = existingAttempts.find((a) => a.step === "API_DESIGN");
+    if (coreAttempt?.userInput || apiAttempt?.userInput) {
+      return buildInitialHLDScene(
+        coreAttempt?.userInput ?? "",
+        apiAttempt?.userInput ?? ""
+      );
+    }
+    return undefined;
+  }, [existingContent, existingAttempts]);
+
   const getUserInput = (): string => {
-    if (isRequirementsStep && requirementsData) {
-      return serializeRequirements(requirementsData);
-    }
-    if (isDrawingStep) {
-      return JSON.stringify({ diagram: excalidrawData, notes: input });
-    }
+    if (isRequirementsStep && requirementsData) return serializeRequirements(requirementsData);
+    if (isDrawingStep) return JSON.stringify({ diagram: excalidrawData, notes: input });
     return input;
   };
 
@@ -88,9 +108,10 @@ export function SessionWorkspace({
     if (isPending) return false;
     if (isRequirementsStep) {
       if (!requirementsData) return false;
-      const hasFR = requirementsData.functional.some((f) => f.trim());
-      const hasNFR = requirementsData.nonFunctional.some((f) => f.trim());
-      return hasFR && hasNFR;
+      return (
+        requirementsData.functional.some((f) => f.trim()) &&
+        requirementsData.nonFunctional.some((f) => f.trim())
+      );
     }
     if (isDrawingStep) return !!excalidrawData;
     return !!input.trim();
@@ -103,9 +124,7 @@ export function SessionWorkspace({
     startTransition(async () => {
       try {
         const attempt = await submitStep(sessionId, step, userInput);
-        if (attempt.aiEvaluation) {
-          setFeedback(JSON.parse(attempt.aiEvaluation));
-        }
+        setFeedback(safeParseEvaluation(attempt.aiEvaluation));
       } catch (error) {
         console.error("Failed to submit step:", error);
       }
@@ -127,9 +146,37 @@ export function SessionWorkspace({
     });
   };
 
-  // Get existing content for rich text steps
-  const existingContent = existingAttempts.find((a) => a.step === step)
-    ?.userInput;
+  const handleTogglePause = () => {
+    startTransition(async () => {
+      if (isPaused) {
+        await resumeSession(sessionId);
+        setIsPaused(false);
+      } else {
+        await pauseSession(sessionId, elapsedRef.current);
+        setIsPaused(true);
+      }
+    });
+  };
+
+  const timerControls = (
+    <>
+      <StepTimer
+        key={step}
+        durationMinutes={STEP_DURATIONS[step]}
+        paused={isPending || isPaused}
+        initialSeconds={timerElapsed}
+        onElapsedChange={handleElapsedChange}
+      />
+      <button
+        onClick={handleTogglePause}
+        disabled={isPending}
+        title={isPaused ? "Resume session" : "Pause session"}
+        className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
+      >
+        {isPaused ? "▶" : "⏸"}
+      </button>
+    </>
+  );
 
   // ─── Full-page Excalidraw layout for HLD ───
   if (isDrawingStep) {
@@ -139,7 +186,7 @@ export function SessionWorkspace({
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-2">
           <div className="flex items-center gap-4">
             <h2 className="text-sm font-semibold">{STEP_LABELS[step]}</h2>
-            <StepTimer key={step} durationMinutes={STEP_DURATIONS[step]} />
+            {timerControls}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -173,33 +220,14 @@ export function SessionWorkspace({
 
         {/* Canvas + Sidebar */}
         <div className="relative flex flex-1 overflow-hidden">
-          {/* Excalidraw Canvas */}
           <div className={`flex-1 ${showSidebar ? "mr-[380px]" : ""}`}>
-            <ExcalidrawBoard
-              fullPage
-              onChange={setExcalidrawData}
-              initialData={
-                existingContent
-                  ? (() => {
-                      try {
-                        return JSON.parse(existingContent).diagram;
-                      } catch {
-                        return undefined;
-                      }
-                    })()
-                  : undefined
-              }
-            />
+            <ExcalidrawBoard fullPage onChange={setExcalidrawData} initialData={initialHLDData} />
           </div>
 
-          {/* Sidebar */}
           {showSidebar && (
             <div className="absolute right-0 top-0 bottom-0 w-[380px] overflow-y-auto border-l border-border bg-background p-4 space-y-4">
-              <p className="text-xs text-muted-foreground">
-                {STEP_PROMPTS[step]}
-              </p>
+              <p className="text-xs text-muted-foreground">{STEP_PROMPTS[step]}</p>
 
-              {/* Design Notes */}
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Design Notes
@@ -213,10 +241,7 @@ export function SessionWorkspace({
                 />
               </div>
 
-              {/* Hints */}
               <StepHints step={step} referenceData={ref} />
-
-              {/* Feedback */}
               {feedback && <FeedbackPanel evaluation={feedback} />}
             </div>
           )}
@@ -228,16 +253,14 @@ export function SessionWorkspace({
   // ─── Standard layout for other steps ───
   return (
     <div className="space-y-6">
-      {/* Step Header */}
       <div className="rounded-lg border border-border p-6">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="text-xl font-semibold">{STEP_LABELS[step]}</h2>
-          <StepTimer key={step} durationMinutes={STEP_DURATIONS[step]} />
+          <div className="flex items-center gap-2">{timerControls}</div>
         </div>
         <p className="text-sm text-muted-foreground">{STEP_PROMPTS[step]}</p>
       </div>
 
-      {/* Input Area */}
       <div className="space-y-4">
         {isRequirementsStep && (
           <RequirementsEditor
@@ -249,6 +272,7 @@ export function SessionWorkspace({
 
         {isRichTextStep && (
           <RichTextEditor
+            key={step}
             onChange={setInput}
             initialContent={existingContent}
             placeholder={`Describe your ${STEP_LABELS[step].toLowerCase()} here...`}
@@ -271,78 +295,14 @@ export function SessionWorkspace({
               disabled={isPending}
               className="rounded-md border border-border px-6 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
             >
-              {feedback.passed
-                ? "Continue to Next Step →"
-                : "Skip to Next Step →"}
+              {feedback.passed ? "Continue to Next Step →" : "Skip to Next Step →"}
             </button>
           )}
         </div>
       </div>
 
-      {/* Feedback */}
       {feedback && <FeedbackPanel evaluation={feedback} />}
-
-      {/* Reference Hints (collapsed) */}
       <StepHints step={step} referenceData={ref} />
-    </div>
-  );
-}
-
-function StepHints({
-  step,
-  referenceData,
-}: {
-  step: Step;
-  referenceData: ReturnType<typeof parseReferenceData>;
-}) {
-  const [showHints, setShowHints] = useState(false);
-
-  const hints: Record<Step, string[]> = {
-    REQUIREMENTS: [
-      "Think about 3 core functional requirements",
-      "Consider: CAP theorem, scalability, latency, durability",
-      `Key insight: ${referenceData.requirements.keyInsight}`,
-    ],
-    CORE_ENTITIES: [
-      "Who are the actors in the system?",
-      "What nouns/resources are needed to satisfy the requirements?",
-      "Keep it simple — you'll refine during high-level design",
-    ],
-    API_DESIGN: [
-      "Map functional requirements to endpoints",
-      "Use REST by default (POST, GET, PUT, DELETE)",
-      "Consider pagination, authentication, rate limiting",
-    ],
-    HIGH_LEVEL_DESIGN: [
-      "Start with the client and work your way to the data store",
-      "Include: load balancers, services, databases, caches, queues",
-      "Show the data flow for each core use case",
-    ],
-    DEEP_DIVES: [
-      "Pick 2-3 interesting areas to go deep on",
-      "Discuss trade-offs, not just solutions",
-      "Consider: scaling bottlenecks, failure modes, data consistency",
-    ],
-  };
-
-  return (
-    <div className="rounded-lg border border-dashed border-border">
-      <button
-        onClick={() => setShowHints(!showHints)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <span>💡 Hints</span>
-        <span>{showHints ? "▲" : "▼"}</span>
-      </button>
-      {showHints && (
-        <ul className="space-y-1.5 border-t border-dashed border-border px-4 py-3">
-          {hints[step].map((hint, i) => (
-            <li key={i} className="text-sm text-muted-foreground">
-              • {hint}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { Step, ReferenceData } from "@/lib/types";
 import { getRelevantKnowledge } from "@/lib/actions/knowledge";
 import { MAX_KNOWLEDGE_CHARS } from "./config";
+import { htmlToAIText } from "@/lib/utils/html";
+import { extractTopicsFromTitle } from "@/lib/utils/tags";
 
 /**
  * Compact system prompt — no framework overview (AI only sees one step).
@@ -23,11 +25,7 @@ export async function buildEvaluationPrompt(
   const rubric = referenceData.rubric[step];
   const stepRef = getStepReference(step, referenceData);
 
-  const topics = problemTitle
-    .toLowerCase()
-    .replace(/^design\s+/i, "")
-    .split(/[\s,]+/)
-    .filter((t) => t.length > 2);
+  const topics = extractTopicsFromTitle(problemTitle);
 
   let knowledge = await getRelevantKnowledge(topics);
   if (knowledge.length > MAX_KNOWLEDGE_CHARS) {
@@ -108,29 +106,7 @@ export function prepareUserInput(step: Step, rawInput: string): string {
   if (step === "REQUIREMENTS") return prepareRequirementsInput(rawInput);
   if (step === "HIGH_LEVEL_DESIGN") return prepareHLDInput(rawInput);
   // CORE_ENTITIES, API_DESIGN, DEEP_DIVES — strip HTML to plain text
-  return stripHtml(rawInput);
-}
-
-/** Convert HTML from TipTap to compact plain text, preserving code blocks. */
-function stripHtml(html: string): string {
-  return html
-    .replace(/<pre><code[^>]*>/g, "\n```\n")
-    .replace(/<\/code><\/pre>/g, "\n```\n")
-    .replace(/<code[^>]*>/g, "`")
-    .replace(/<\/code>/g, "`")
-    .replace(/<br\s*\/?>/g, "\n")
-    .replace(/<\/p>/g, "\n")
-    .replace(/<\/li>/g, "\n")
-    .replace(/<\/h[1-6]>/g, "\n")
-    .replace(/<li[^>]*>/g, "- ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return htmlToAIText(rawInput);
 }
 
 function prepareRequirementsInput(rawInput: string): string {

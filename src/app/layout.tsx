@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { auth, signIn, signOut } from "@/lib/auth";
+import { SignInButton } from "@/components/sign-in-button";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -79,9 +80,7 @@ export default async function RootLayout({
                     await signIn("github");
                   }}
                 >
-                  <button className="rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground transition-colors hover:bg-accent/90">
-                    Sign in with GitHub
-                  </button>
+                  <SignInButton />
                 </form>
               )}
             </div>

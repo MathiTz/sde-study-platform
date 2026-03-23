@@ -2,6 +2,7 @@
 
 import * as cheerio from "cheerio";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { AI_CONFIG, MAX_SCRAPE_CHARS, MAX_SUMMARY_CHARS } from "./ai/config";
 
 export interface ScrapedKnowledge {
   title: string;
@@ -51,7 +52,7 @@ async function extractPageContent(url: string): Promise<{ title: string; text: s
   }
 
   // Collapse whitespace
-  text = text.replace(/\s+/g, " ").slice(0, 15_000); // Cap to avoid huge token usage
+  text = text.replace(/\s+/g, " ").slice(0, MAX_SCRAPE_CHARS);
 
   return { title, text };
 }
@@ -65,8 +66,8 @@ async function summariseWithAI(title: string, text: string): Promise<{ summary: 
 
   const client = new GoogleGenerativeAI(key);
   const model = client.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+    model: AI_CONFIG.model,
+    generationConfig: { temperature: 0.2, responseMimeType: AI_CONFIG.responseMimeType },
   });
 
   const prompt = `You are a knowledge extraction assistant for system design interview preparation.
@@ -80,7 +81,7 @@ ${text}
 
 Respond with a JSON object:
 {
-  "summary": "<structured markdown summary of the key concepts, patterns, trade-offs, and best practices — keep under 2000 chars>",
+  "summary": "<structured markdown summary of the key concepts, patterns, trade-offs, and best practices — keep under ${MAX_SUMMARY_CHARS} chars>",
   "tags": ["<topic tag>", ...] // e.g. ["caching", "load-balancing", "database-sharding", "url-shortener"]
 }
 
@@ -100,7 +101,7 @@ Focus on:
       tags: Array.isArray(parsed.tags) ? parsed.tags.map(String) : [],
     };
   } catch {
-    return { summary: text.slice(0, 2000), tags: [] };
+    return { summary: text.slice(0, MAX_SUMMARY_CHARS), tags: [] };
   }
 }
 

@@ -4,8 +4,7 @@ import { auth } from "@/lib/auth";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { RecommendedResources } from "@/components/RecommendedResources";
 import { getRecommendedResources } from "@/lib/actions/resources";
-
-const DIFFICULTY_ORDER = { EASY: 0, MEDIUM: 1, HARD: 2 };
+import { DIFFICULTY_ORDER } from "@/lib/types";
 
 export default async function Home() {
   const [problems, session] = await Promise.all([
@@ -26,18 +25,15 @@ export default async function Home() {
 
   const grouped = problems.reduce(
     (acc, p) => {
-      const d = p.difficulty as keyof typeof DIFFICULTY_ORDER;
-      if (!acc[d]) acc[d] = [];
-      acc[d].push(p);
+      if (!acc[p.difficulty]) acc[p.difficulty] = [];
+      acc[p.difficulty].push(p);
       return acc;
     },
     {} as Record<string, typeof problems>
   );
 
   const sortedDifficulties = Object.keys(grouped).sort(
-    (a, b) =>
-      (DIFFICULTY_ORDER[a as keyof typeof DIFFICULTY_ORDER] ?? 0) -
-      (DIFFICULTY_ORDER[b as keyof typeof DIFFICULTY_ORDER] ?? 0)
+    (a, b) => (DIFFICULTY_ORDER[a as keyof typeof DIFFICULTY_ORDER] ?? 0) - (DIFFICULTY_ORDER[b as keyof typeof DIFFICULTY_ORDER] ?? 0)
   );
 
   return (
@@ -65,6 +61,11 @@ export default async function Home() {
                   <span className="font-medium">{s.problem.title}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  {s.status === "PAUSED" && (
+                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                      Paused
+                    </span>
+                  )}
                   <span className="capitalize">
                     {s.currentStep === "COMPLETED" ? "Completed" : s.currentStep.toLowerCase().replace("_", " ")}
                   </span>

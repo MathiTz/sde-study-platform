@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import {
+  RequirementsData,
+  serializeRequirements,
+  deserializeRequirements,
+} from "@/lib/types";
 
-export interface RequirementsData {
-  functional: string[];
-  nonFunctional: string[];
-  estimation: {
-    dau: string;
-    readWriteRatio: string;
-    avgPayloadKB: string;
-  };
-}
+export type { RequirementsData };
+export { serializeRequirements, deserializeRequirements };
 
 interface RequirementsEditorProps {
   onChange: (data: RequirementsData) => void;
@@ -21,50 +19,24 @@ interface RequirementsEditorProps {
 const DEFAULT_DATA: RequirementsData = {
   functional: [""],
   nonFunctional: [""],
-  estimation: {
-    dau: "",
-    readWriteRatio: "",
-    avgPayloadKB: "",
-  },
+  estimation: { dau: "", readWriteRatio: "", avgPayloadKB: "" },
 };
 
-export function serializeRequirements(data: RequirementsData): string {
-  return JSON.stringify(data);
-}
-
-export function deserializeRequirements(raw: string): RequirementsData | null {
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed.functional && parsed.nonFunctional) return parsed;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-// ─── Shared list field config ───
 type ListField = "functional" | "nonFunctional";
 
-interface ListSectionConfig {
-  field: ListField;
-  title: string;
-  description: string;
-  prefix: string;
-  placeholder: string;
-}
-
-const LIST_SECTIONS: ListSectionConfig[] = [
+const LIST_SECTIONS = [
   {
-    field: "functional",
+    field: "functional" as ListField,
     title: "Functional Requirements",
     description: "What should users/clients be able to do?",
     prefix: "FR",
     placeholder: "Users should be able to...",
   },
   {
-    field: "nonFunctional",
+    field: "nonFunctional" as ListField,
     title: "Non-Functional Requirements",
-    description: "What quality attributes matter? (availability, latency, consistency, durability, etc.)",
+    description:
+      "What quality attributes matter? (availability, latency, consistency, durability, etc.)",
     prefix: "NFR",
     placeholder: "The system should...",
   },
@@ -76,49 +48,10 @@ const ESTIMATION_FIELDS = [
   { key: "avgPayloadKB" as const, label: "Avg Payload (KB)", placeholder: "e.g. 5" },
 ];
 
-export function RequirementsEditor({
-  onChange,
-  initialData,
-  disabled,
-}: RequirementsEditorProps) {
-  const resolvedInitial = useMemo(
-    () => initialData ?? DEFAULT_DATA,
-    [initialData]
-  );
-  const [data, setData] = useState<RequirementsData>(resolvedInitial);
-  const [showEstimation, setShowEstimation] = useState(false);
-
-  const update = useCallback(
-    (next: RequirementsData) => {
-      setData(next);
-      onChange(next);
-    },
-    [onChange]
-  );
-
-  // Generic list operations
-  const addItem = (field: ListField) =>
-    update({ ...data, [field]: [...data[field], ""] });
-
-  const updateItem = (field: ListField, i: number, value: string) => {
-    const next = [...data[field]];
-    next[i] = value;
-    update({ ...data, [field]: next });
-  };
-
-  const removeItem = (field: ListField, i: number) => {
-    if (data[field].length <= 1) return;
-    update({ ...data, [field]: data[field].filter((_, idx) => idx !== i) });
-  };
-
-  const updateEstimation = (field: keyof RequirementsData["estimation"], value: string) => {
-    update({ ...data, estimation: { ...data.estimation, [field]: value } });
-  };
-
-  // Back-of-envelope calculations
-  const dau = parseFloat(data.estimation.dau) || 0;
-  const rwRatio = parseFloat(data.estimation.readWriteRatio) || 0;
-  const payloadKB = parseFloat(data.estimation.avgPayloadKB) || 0;
+function computeEstimates(estimation: RequirementsData["estimation"]) {
+  const dau = parseFloat(estimation.dau) || 0;
+  const rwRatio = parseFloat(estimation.readWriteRatio) || 0;
+  const payloadKB = parseFloat(estimation.avgPayloadKB) || 0;
   const dailyActions = dau * 10;
   const writeQPS = dailyActions > 0 ? Math.round(dailyActions / 86400) : 0;
   const readQPS = writeQPS * (rwRatio || 1);
@@ -130,6 +63,61 @@ export function RequirementsEditor({
     parseFloat(dailyStorageGB) > 0
       ? ((parseFloat(dailyStorageGB) * 365) / 1000).toFixed(2)
       : "0";
+  return { dau, writeQPS, readQPS, dailyStorageGB, yearlyStorageTB };
+}
+
+export function RequirementsEditor({
+  onChange,
+  initialData,
+  disabled,
+}: RequirementsEditorProps) {
+  const [data, setData] = useState<RequirementsData>(
+    () => initialData ?? DEFAULT_DATA
+  );
+  const [showEstimation, setShowEstimation] = useState(false);
+
+  const update = useCallback(
+    (next: RequirementsData) => {
+      setData(next);
+      onChange(next);
+    },
+    [onChange]
+  );
+
+  const addItem = useCallback(
+    (field: ListField) => update({ ...data, [field]: [...data[field], ""] }),
+    [data, update]
+  );
+
+  const updateItem = useCallback(
+    (field: ListField, i: number, value: string) => {
+      const next = [...data[field]];
+      next[i] = value;
+      update({ ...data, [field]: next });
+    },
+    [data, update]
+  );
+
+  const removeItem = useCallback(
+    (field: ListField, i: number) => {
+      if (data[field].length <= 1) return;
+      update({ ...data, [field]: data[field].filter((_, idx) => idx !== i) });
+    },
+    [data, update]
+  );
+
+  const updateEstimation = useCallback(
+    (field: keyof RequirementsData["estimation"], value: string) => {
+      update({ ...data, estimation: { ...data.estimation, [field]: value } });
+    },
+    [data, update]
+  );
+
+  const estimates = useMemo(
+    () => computeEstimates(data.estimation),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data.estimation.dau, data.estimation.readWriteRatio, data.estimation.avgPayloadKB]
+  );
 
   return (
     <div className="space-y-6">
@@ -146,14 +134,13 @@ export function RequirementsEditor({
               + Add
             </button>
           </div>
-          <p className="mb-3 text-xs text-muted-foreground">
-            {section.description}
-          </p>
+          <p className="mb-3 text-xs text-muted-foreground">{section.description}</p>
           <div className="space-y-2">
             {data[section.field].map((value, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {section.prefix}{i + 1}
+                  {section.prefix}
+                  {i + 1}
                 </span>
                 <input
                   value={value}
@@ -178,11 +165,11 @@ export function RequirementsEditor({
         </div>
       ))}
 
-      {/* Back-of-Envelope Estimation (Collapsible) */}
+      {/* Back-of-Envelope Estimation (collapsible) */}
       <div className="rounded-lg border border-dashed border-border">
         <button
           type="button"
-          onClick={() => setShowEstimation(!showEstimation)}
+          onClick={() => setShowEstimation((s) => !s)}
           className="flex w-full items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground"
         >
           <span>📐 Back-of-Envelope Estimation (optional)</span>
@@ -207,20 +194,23 @@ export function RequirementsEditor({
               ))}
             </div>
 
-            {dau > 0 && (
+            {estimates.dau > 0 && (
               <div className="rounded-md bg-muted/50 px-4 py-3">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Estimates
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {[
-                    ["Write QPS", writeQPS.toLocaleString()],
-                    ["Read QPS", readQPS.toLocaleString()],
-                    ["Daily Storage", `${dailyStorageGB} GB`],
-                    ["Yearly Storage", `${yearlyStorageTB} TB`],
-                  ].map(([label, value]) => (
+                  {(
+                    [
+                      ["Write QPS", estimates.writeQPS.toLocaleString()],
+                      ["Read QPS", estimates.readQPS.toLocaleString()],
+                      ["Daily Storage", `${estimates.dailyStorageGB} GB`],
+                      ["Yearly Storage", `${estimates.yearlyStorageTB} TB`],
+                    ] as const
+                  ).map(([label, value]) => (
                     <div key={label}>
-                      {label}: <span className="font-mono font-medium">~{value}</span>
+                      {label}:{" "}
+                      <span className="font-mono font-medium">~{value}</span>
                     </div>
                   ))}
                 </div>

@@ -1,17 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 import { scrapeUrl } from "@/lib/scraper";
 import { revalidatePath } from "next/cache";
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
-}
+import { parseTags } from "@/lib/utils/tags";
 
 export async function scrapeAndSave(url: string) {
-  await requireAuth();
+  await getAuthUser();
 
   const knowledge = await scrapeUrl(url);
 
@@ -29,32 +25,30 @@ export async function scrapeAndSave(url: string) {
 }
 
 export async function getKnowledgeEntries() {
-  await requireAuth();
+  await getAuthUser();
   return prisma.knowledgeEntry.findMany({ orderBy: { createdAt: "desc" } });
 }
 
 export async function deleteKnowledgeEntry(id: string) {
-  await requireAuth();
+  await getAuthUser();
   await prisma.knowledgeEntry.delete({ where: { id } });
   revalidatePath("/knowledge");
 }
 
 /**
- * Query knowledge entries whose tags match any of the given topics.
- * Used by the AI evaluation pipeline to inject relevant knowledge.
+ * Return a formatted knowledge context string for entries whose tags
+ * overlap with the given topics. Used by the AI evaluation pipeline.
  */
 export async function getRelevantKnowledge(topics: string[]): Promise<string> {
   if (topics.length === 0) return "";
 
   const entries = await prisma.knowledgeEntry.findMany();
-
-  // Filter entries whose tags overlap with the requested topics
   const lowerTopics = topics.map((t) => t.toLowerCase());
+
   const relevant = entries.filter((e) => {
-    const entryTags = e.tags.split(",").map((t) => t.trim().toLowerCase());
-    return entryTags.some(
-      (tag) =>
-        lowerTopics.some((topic) => tag.includes(topic) || topic.includes(tag))
+    const entryTags = parseTags(e.tags);
+    return entryTags.some((tag) =>
+      lowerTopics.some((topic) => tag.includes(topic) || topic.includes(tag))
     );
   });
 
