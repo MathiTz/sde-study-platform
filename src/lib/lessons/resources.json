@@ -1,0 +1,363 @@
+{
+  "generated": "2026-03-27",
+  "sources": {
+    "client-server": {
+      "topic": "Client-Server Architecture, HTTP, REST APIs",
+      "resources": [
+        {
+          "title": "Client-Server Overview",
+          "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Client-Server_overview",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "How the Web Works",
+          "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "Overview of HTTP",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "HTTP Guides",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "REST API Tutorial",
+          "url": "https://restfulapi.net/",
+          "source": "restfulapi.net",
+          "category": "Tutorial"
+        },
+        {
+          "title": "Server-Side Web Frameworks",
+          "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Web_frameworks",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "Introduction to Server Side",
+          "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Introduction",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        }
+      ]
+    },
+    "databases": {
+      "topic": "Database Indexing, Replication, Sharding",
+      "resources": [
+        {
+          "title": "Path to Scaling",
+          "url": "https://planetscale.com/learn/courses/database-scaling/scaling/path-to-scaling",
+          "source": "PlanetScale",
+          "category": "Course"
+        },
+        {
+          "title": "Database Replication",
+          "url": "https://planetscale.com/learn/courses/database-scaling/scaling/replication",
+          "source": "PlanetScale",
+          "category": "Course"
+        },
+        {
+          "title": "Sharding Strategies",
+          "url": "https://planetscale.com/blog/types-of-sharding",
+          "source": "PlanetScale",
+          "category": "Blog"
+        },
+        {
+          "title": "Database Sharding",
+          "url": "https://planetscale.com/blog/database-sharding",
+          "source": "PlanetScale",
+          "category": "Blog"
+        },
+        {
+          "title": "Vertical Sharding",
+          "url": "https://planetscale.com/learn/courses/database-scaling/sharding/vertical-sharding",
+          "source": "PlanetScale",
+          "category": "Course"
+        },
+        {
+          "title": "Dealing with Large Tables",
+          "url": "https://planetscale.com/blog/dealing-with-large-tables",
+          "source": "PlanetScale",
+          "category": "Blog"
+        },
+        {
+          "title": "Sharding vs Partitioning",
+          "url": "https://planetscale.com/blog/sharding-vs-partitioning-whats-the-difference",
+          "source": "PlanetScale",
+          "category": "Blog"
+        },
+        {
+          "title": "Partitioning",
+          "url": "https://planetscale.com/learn/courses/database-scaling/scaling/partitioning",
+          "source": "PlanetScale",
+          "category": "Course"
+        }
+      ]
+    },
+    "caching": {
+      "topic": "Redis, Cache Invalidation, Cache Strategies",
+      "resources": [
+        {
+          "title": "Optimize Your Cache for Fast, Fresh Data",
+          "url": "https://redis.io/guides/optimize-your-cache-for-fast-fresh-and-in-sync-data/",
+          "source": "Redis",
+          "category": "Guide"
+        },
+        {
+          "title": "Key Eviction Policies",
+          "url": "https://redis.io/docs/latest/develop/reference/eviction",
+          "source": "Redis",
+          "category": "Documentation"
+        },
+        {
+          "title": "Client-Side Caching Introduction",
+          "url": "https://redis.io/docs/latest/develop/clients/client-side-caching/",
+          "source": "Redis",
+          "category": "Documentation"
+        },
+        {
+          "title": "Caching Solutions",
+          "url": "https://redis.io/solutions/caching/",
+          "source": "Redis",
+          "category": "Documentation"
+        },
+        {
+          "title": "Cache REST API Responses with Node.js and Redis",
+          "url": "https://redis.io/learn/howtos/caching/",
+          "source": "Redis",
+          "category": "Tutorial"
+        },
+        {
+          "title": "Redis Anti-Patterns",
+          "url": "https://redis.io/tutorials/redis-anti-patterns-every-developer-should-avoid/",
+          "source": "Redis",
+          "category": "Tutorial"
+        },
+        {
+          "title": "Redis Expiration Algorithm",
+          "url": "https://redis.io/faq/doc/1fqjridk8w/what-are-the-impacts-of-the-redis-expiration-algorithm",
+          "source": "Redis",
+          "category": "FAQ"
+        }
+      ]
+    },
+    "load-balancing": {
+      "topic": "Load Balancing Algorithms, Horizontal Scaling",
+      "resources": [
+        {
+          "title": "HTTP Load Balancing",
+          "url": "https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/",
+          "source": "NGINX",
+          "category": "Documentation"
+        },
+        {
+          "title": "HTTP Health Checks",
+          "url": "https://docs.nginx.com/nginx/admin-guide/load-balancer/http-health-check",
+          "source": "NGINX",
+          "category": "Documentation"
+        },
+        {
+          "title": "Global Server Load Balancing",
+          "url": "https://docs.nginx.com/nginx/deployment-guides/global-server-load-balancing",
+          "source": "NGINX",
+          "category": "Documentation"
+        },
+        {
+          "title": "Load Balancing Node.js Servers",
+          "url": "https://docs.nginx.com/nginx/deployment-guides/load-balance-third-party/node-js",
+          "source": "NGINX",
+          "category": "Documentation"
+        },
+        {
+          "title": "Scaling Control Plane and Data Plane",
+          "url": "https://docs.nginx.com/nginx-gateway-fabric/how-to/scaling",
+          "source": "NGINX",
+          "category": "Documentation"
+        },
+        {
+          "title": "NGINX Deployment on AWS",
+          "url": "https://docs.nginx.com/nginx/deployment-guides/amazon-web-services",
+          "source": "NGINX",
+          "category": "Documentation"
+        }
+      ]
+    },
+    "messaging-queues": {
+      "topic": "Kafka, Message Queues, Pub/Sub",
+      "resources": [
+        {
+          "title": "Apache Kafka Documentation",
+          "url": "https://kafka.apache.org/documentation/",
+          "source": "Apache Kafka",
+          "category": "Documentation"
+        },
+        {
+          "title": "Kafka Architecture",
+          "url": "https://kafka.apache.org/28/streams/architecture/",
+          "source": "Apache Kafka",
+          "category": "Documentation"
+        },
+        {
+          "title": "Kafka Design",
+          "url": "https://kafka.apache.org/42/design/design/",
+          "source": "Apache Kafka",
+          "category": "Documentation"
+        },
+        {
+          "title": "Kafka Use Cases",
+          "url": "https://kafka.apache.org/42/getting-started/uses/",
+          "source": "Apache Kafka",
+          "category": "Documentation"
+        },
+        {
+          "title": "KRaft vs ZooKeeper",
+          "url": "https://kafka.apache.org/41/getting-started/zk2kraft/",
+          "source": "Apache Kafka",
+          "category": "Documentation"
+        }
+      ]
+    },
+    "real-time": {
+      "topic": "WebSockets, Server-Sent Events",
+      "resources": [
+        {
+          "title": "Server-Sent Events Overview",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "Using Server-Sent Events",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "WebSocket API",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "Writing WebSocket Servers",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "Writing WebSocket Client Applications",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_client_applications",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        },
+        {
+          "title": "WebSocket API Reference",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSocket",
+          "source": "MDN Web Docs",
+          "category": "Documentation"
+        }
+      ]
+    },
+    "cap-theorem": {
+      "topic": "CAP Theorem, Eventual Consistency, Distributed Systems",
+      "resources": [
+        {
+          "title": "Eventual Consistency Today: Limitations, Extensions, and Beyond",
+          "url": "https://amplab.cs.berkeley.edu/publication/eventual-consistency-today-limitations-extensions-and-beyond",
+          "source": "UC Berkeley AMPLab",
+          "category": "Research Paper"
+        },
+        {
+          "title": "HAT, not CAP: Towards Highly Available Transactions",
+          "url": "https://amplab.cs.berkeley.edu/publication/hat-not-cap-towards-highly-available-transactions",
+          "source": "UC Berkeley AMPLab",
+          "category": "Research Paper"
+        },
+        {
+          "title": "The Network is Reliable",
+          "url": "https://amplab.cs.berkeley.edu/publication/the-network-is-reliable",
+          "source": "UC Berkeley AMPLab",
+          "category": "Research Paper"
+        },
+        {
+          "title": "Bolt-on Causal Consistency",
+          "url": "https://amplab.cs.berkeley.edu/publication/bolt-on-causal-consistency",
+          "source": "UC Berkeley AMPLab",
+          "category": "Research Paper"
+        },
+        {
+          "title": "An Overview of the CALM Theorem",
+          "url": "https://rise.cs.berkeley.edu/blog/an-overview-of-the-calm-theorem/",
+          "source": "RISE Lab",
+          "category": "Blog"
+        },
+        {
+          "title": "Harvest, Yield, and Scalable Tolerant Systems",
+          "url": "https://radlab.cs.berkeley.edu/people/fox/static/pubs/pdf/c18.pdf",
+          "source": "UC Berkeley",
+          "category": "Research Paper"
+        }
+      ]
+    },
+    "file-upload": {
+      "topic": "File Upload, S3, Presigned URLs, Direct Upload",
+      "resources": [
+        {
+          "title": "Implementing Secure File Uploads to S3 at the Edge",
+          "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/implementing-secure-file-uploads-to-amazon-s3-at-the-edge-choosing-the-right-pattern/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Using AWS Edge to Optimize Object Uploads to S3",
+          "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/using-aws-edge-to-optimize-object-uploads-to-amazon-s3/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Secure File Sharing with Presigned URLs",
+          "url": "https://aws.amazon.com/blogs/security/how-to-securely-transfer-files-with-presigned-urls/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Uploading Large Objects to S3 with Multipart Upload",
+          "url": "https://aws.amazon.com/blogs/compute/uploading-large-objects-to-amazon-s3-using-multipart-upload-and-transfer-acceleration/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Patterns for Building an API to Upload Files to S3",
+          "url": "https://aws.amazon.com/blogs/compute/patterns-for-building-an-api-to-upload-files-to-amazon-s3/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Uploading to S3 Directly from Web or Mobile",
+          "url": "https://aws.amazon.com/blogs/compute/uploading-to-amazon-s3-directly-from-a-web-or-mobile-application/",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Securing S3 Presigned URLs for Serverless",
+          "url": "https://aws.amazon.com/blogs/compute/securing-amazon-s3-presigned-urls-for-serverless-applications",
+          "source": "AWS",
+          "category": "Blog"
+        },
+        {
+          "title": "Uploading Objects with Presigned URLs",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html",
+          "source": "AWS",
+          "category": "Documentation"
+        }
+      ]
+    }
+  }
+}

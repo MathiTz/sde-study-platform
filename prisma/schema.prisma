@@ -21,6 +21,9 @@ model User {
   accounts           Account[]
   sessions           Session[]
   dismissedResources DismissedResource[]
+  questionAttempts   QuestionAttempt[]
+  weekProgress       WeekProgress[]
+  lessonProgress     UserLessonProgress[]
 }
 
 model Account {
@@ -104,6 +107,80 @@ model KnowledgeEntry {
   createdAt DateTime @default(now())
 }
 
+// ─── Study Plan ───────────────────────────────────────────────
+
+model StudyPlan {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  duration    Int      // weeks
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  weeks StudyWeek[]
+}
+
+model StudyWeek {
+  id          String   @id @default(cuid())
+  planId      String
+  weekNumber  Int
+  title       String
+  description String
+  topics      String   // comma-separated topics
+  lessonId    String?  // Links to the related lesson in LESSONS
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  plan      StudyPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  questions StudyQuestion[]
+  progress  WeekProgress[]
+}
+
+model StudyQuestion {
+  id           String  @id @default(cuid())
+  weekId       String
+  questionType String  // SINGLE, MULTIPLE, ABSTRACT, DRAWING
+  question     String  // The question text
+  options      String? // JSON array for SINGLE/MULTIPLE: [{text, isCorrect}]
+  hint         String? // Optional hint
+  explanation  String? // Shown after answering
+  topic        String  // Main topic this question covers
+  difficulty   String  @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED
+
+  week     StudyWeek      @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  attempts QuestionAttempt[]
+}
+
+model QuestionAttempt {
+  id           String   @id @default(cuid())
+  questionId   String
+  userId       String
+  userAnswer   String   // For SINGLE/MULTIPLE: selected option IDs. For ABSTRACT/DRAWING: text or scene data
+  isCorrect    Boolean? // null for ABSTRACT/DRAWING until AI evaluates
+  score        Float?   // AI score for ABSTRACT/DRAWING
+  aiFeedback   String?  // JSON: {strengths, weaknesses, suggestions}
+  createdAt    DateTime @default(now())
+
+  question StudyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WeekProgress {
+  id           String   @id @default(cuid())
+  weekId       String
+  userId       String
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+  score        Float?
+  attemptsCount Int      @default(0)
+
+  week StudyWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, userId])
+}
+
 // ─── Study Resources ───────────────────────────────────────────
 
 model StudyResource {
@@ -130,4 +207,17 @@ model DismissedResource {
   resource StudyResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, resourceId])
+}
+
+// ─── Lesson Progress ────────────────────────────────────────────
+
+model UserLessonProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String   // Matches the lesson id in lib/lessons/index.ts
+  readAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
 }

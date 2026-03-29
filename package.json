@@ -8,10 +8,14 @@
     "start": "node .next/standalone/server.js",
     "lint": "eslint",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:seed:resources": "npx tsx prisma/seed-resources.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
+  },
+  "seeds": {
+    "resources": "npx tsx prisma/seed-resources.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -24,6 +28,7 @@
     "@tiptap/react": "^3.20.1",
     "@tiptap/starter-kit": "^3.20.1",
     "cheerio": "^1.2.0",
+    "hast-util-to-html": "^9.0.5",
     "lowlight": "^3.3.0",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",

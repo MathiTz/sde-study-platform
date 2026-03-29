@@ -49,6 +49,7 @@ export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export const DIFFICULTY_ORDER: Record<Difficulty, number> = { EASY: 0, MEDIUM: 1, HARD: 2 };
 
 export const PASSING_SCORE_THRESHOLD = 60;
+export const WEEK_PASSING_SCORE_THRESHOLD = 75;
 
 export interface AuthUser {
   id: string;
@@ -134,4 +135,76 @@ export function getNextStep(current: Step): Step | "COMPLETED" {
 
 export function parseReferenceData(json: string): ReferenceData {
   return JSON.parse(json) as ReferenceData;
+}
+
+// ─── Study Plan Types ──────────────────────────────────────────
+
+export type QuestionType = "SINGLE" | "MULTIPLE" | "ABSTRACT" | "DRAWING";
+
+export interface StudyPlan {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  isActive: boolean;
+  weeks: StudyWeek[];
+}
+
+export interface StudyWeek {
+  id: string;
+  weekNumber: number;
+  title: string;
+  description: string;
+  topics: string;
+  lessonId: string | null;
+  isCompleted: boolean;
+  isLocked: boolean;
+  questions: StudyQuestion[];
+  progress?: WeekProgress | null;
+}
+
+export interface StudyQuestion {
+  id: string;
+  questionType: QuestionType;
+  question: string;
+  options: QuestionOption[] | null;
+  hint: string | null;
+  explanation: string | null;
+  topic: string;
+  difficulty: string;
+  attempts: QuestionAttempt[];
+}
+
+export interface QuestionOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuestionAttempt {
+  id: string;
+  userAnswer: string;
+  isCorrect: boolean | null;
+  score: number | null;
+  aiFeedback: AIFeedback | null;
+  createdAt: string;
+}
+
+export interface AIFeedback {
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+}
+
+export interface WeekProgress {
+  id: string;
+  startedAt: string;
+  completedAt: string | null;
+  score: number | null;
+  attemptsCount: number;
+}
+
+export interface UserLessonProgress {
+  id: string;
+  lessonId: string;
+  readAt: string;
 }

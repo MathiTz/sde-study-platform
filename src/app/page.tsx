@@ -67,7 +67,7 @@ export default async function Home() {
                     </span>
                   )}
                   <span className="capitalize">
-                    {s.currentStep === "COMPLETED" ? "Completed" : s.currentStep.toLowerCase().replace("_", " ")}
+                    {s.currentStep === "COMPLETED" ? "Completed" : s.currentStep.toLowerCase().replaceAll("_", " ")}
                   </span>
                   {s.overallScore != null && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">

@@ -14,7 +14,10 @@ export function StepTimer({ durationMinutes, paused, initialSeconds = 0, onElaps
   const [elapsed, setElapsed] = useState(initialSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const onElapsedChangeRef = useRef(onElapsedChange);
-  onElapsedChangeRef.current = onElapsedChange;
+
+  useEffect(() => {
+    onElapsedChangeRef.current = onElapsedChange;
+  }, [onElapsedChange]);
 
   useEffect(() => {
     if (paused) {

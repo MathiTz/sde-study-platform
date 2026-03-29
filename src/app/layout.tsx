@@ -59,6 +59,18 @@ export default async function RootLayout({
                   >
                     Knowledge
                   </Link>
+                  <Link
+                    href="/study-plan"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Study Plan
+                  </Link>
+                  <Link
+                    href="/lessons"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Lessons
+                  </Link>
                   <span className="text-sm text-muted-foreground">
                     {session.user.name || session.user.email}
                   </span>
